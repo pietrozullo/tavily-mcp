@@ -41,7 +41,9 @@ type Props = z.infer<typeof propsSchema>;
 
 // ---------- Theme ----------
 
-const FONT =
+const MONO =
+  "'SF Mono', 'Fira Code', 'Cascadia Code', 'Consolas', 'Liberation Mono', 'Courier New', monospace";
+const SANS =
   '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif';
 
 function useColors() {
@@ -65,11 +67,10 @@ function useColors() {
     title: dark ? "#ece9e4" : "#1b1916",
     body: dark ? "#b5b0a8" : "#4a4540",
     muted: dark ? "#7d7870" : "#9c968e",
-    // URL — Tavily uses a muted teal/green
-    url: dark ? "#6cbf9a" : "#2d8a6e",
-    // Score badge
-    scoreFg: dark ? "#c4b89e" : "#7a6c52",
-    scoreBg: dark ? "#302d28" : "#f2eee5",
+    // URL — muted gray, shown in monospace
+    url: dark ? "#8a8580" : "#7a756e",
+    // Score — plain monospace text, no background
+    scoreFg: dark ? "#b5b0a8" : "#4a4540",
     // Section labels
     label: dark ? "#a09888" : "#6e6456",
     // Search bar
@@ -156,94 +157,80 @@ function AnswerBox({ answer, c }: { answer: string; c: Colors }) {
 }
 
 function ResultCard({ result, c }: { result: z.infer<typeof resultSchema>; c: Colors }) {
-  const [hovered, setHovered] = useState(false);
-
-  // Parse a clean display URL
-  let displayUrl = result.url;
-  try {
-    const u = new URL(result.url);
-    displayUrl = u.hostname.replace(/^www\./, "") + u.pathname;
-    // Remove trailing slash if it's just the root
-    if (displayUrl.endsWith("/") && u.pathname === "/") {
-      displayUrl = displayUrl.slice(0, -1);
-    }
-  } catch {
-    // leave as-is
-  }
-
   return (
     <div
       style={{
-        padding: "22px 24px",
-        borderRadius: 14,
-        backgroundColor: hovered ? c.cardHover : c.cardBg,
+        padding: "20px 24px",
+        borderRadius: 10,
+        backgroundColor: c.cardBg,
         border: `1px solid ${c.cardBorder}`,
-        boxShadow: hovered ? c.cardShadowHover : c.cardShadow,
-        transition: "background-color 0.15s, box-shadow 0.15s",
-        cursor: "default",
+        boxShadow: c.cardShadow,
+        fontFamily: MONO,
       }}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
     >
-      {/* Row 1: Title + Score */}
+      {/* Row 1: Favicon + Title + Score */}
       <div
         style={{
           display: "flex",
           justifyContent: "space-between",
-          alignItems: "baseline",
+          alignItems: "flex-start",
           gap: 16,
-          marginBottom: 4,
+          marginBottom: 2,
         }}
       >
-        <h3
-          style={{
-            margin: 0,
-            fontSize: 17,
-            fontWeight: 700,
-            color: c.title,
-            lineHeight: 1.35,
-            flex: 1,
-            minWidth: 0,
-          }}
-        >
-          {result.title}
-        </h3>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, flex: 1, minWidth: 0 }}>
+          {result.favicon && (
+            <img
+              src={result.favicon}
+              alt=""
+              width={20}
+              height={20}
+              style={{ borderRadius: 4, flexShrink: 0 }}
+            />
+          )}
+          <span
+            style={{
+              fontSize: 15,
+              fontWeight: 700,
+              color: c.title,
+              lineHeight: 1.35,
+            }}
+          >
+            {result.title}
+          </span>
+        </div>
         <span
           style={{
-            display: "inline-block",
-            padding: "4px 10px",
-            borderRadius: 8,
-            backgroundColor: c.scoreBg,
-            fontSize: 13,
-            fontFamily: "'SF Mono', 'Fira Code', 'Consolas', monospace",
-            fontWeight: 500,
+            fontSize: 14,
+            fontWeight: 400,
             color: c.scoreFg,
             whiteSpace: "nowrap" as const,
             flexShrink: 0,
-            lineHeight: 1.3,
+            lineHeight: 1.35,
           }}
         >
           score: {result.score.toFixed(2)}
         </span>
       </div>
 
-      {/* Row 2: URL */}
+      {/* Row 2: Full URL */}
       <div
         style={{
-          fontSize: 13,
+          fontSize: 12,
           color: c.url,
-          marginBottom: 10,
+          marginBottom: 12,
+          marginLeft: result.favicon ? 30 : 0,
           lineHeight: 1.4,
         }}
       >
-        {displayUrl}
+        {result.url}
       </div>
 
       {/* Row 3: Content snippet */}
       <div
         style={{
-          fontSize: 14,
-          lineHeight: 1.65,
+          fontSize: 13,
+          lineHeight: 1.7,
           color: c.body,
         }}
       >
@@ -251,7 +238,7 @@ function ResultCard({ result, c }: { result: z.infer<typeof resultSchema>; c: Co
       </div>
 
       {result.published_date && (
-        <div style={{ fontSize: 12, color: c.muted, marginTop: 10 }}>
+        <div style={{ fontSize: 11, color: c.muted, marginTop: 10 }}>
           {result.published_date}
         </div>
       )}
@@ -332,7 +319,7 @@ export default function SearchResults() {
           style={{
             padding: 48,
             textAlign: "center",
-            fontFamily: FONT,
+            fontFamily: SANS,
             backgroundColor: c.bg,
             color: c.muted,
           }}
@@ -351,7 +338,7 @@ export default function SearchResults() {
       <div
         style={{
           padding: 32,
-          fontFamily: FONT,
+          fontFamily: SANS,
           backgroundColor: c.bg,
           maxHeight: 600,
           overflowY: "auto" as const,
