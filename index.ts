@@ -1,4 +1,4 @@
-import { createMCPServer, text, error } from "mcp-use/server";
+import { createMCPServer, text, error, widget } from "mcp-use/server";
 import { z } from "zod";
 
 const TAVILY_API_KEY = process.env.TAVILY_API_KEY;
@@ -206,6 +206,11 @@ server.tool(
     description:
       "Search the web for current information on any topic. Use for news, facts, or data beyond your knowledge cutoff. Returns snippets and source URLs.",
     annotations: { readOnlyHint: true, openWorldHint: true },
+    widget: {
+      name: "search-results",
+      invoking: "Searching the web...",
+      invoked: "Search complete",
+    },
     schema: z.object({
       query: z.string().describe("Search query"),
       search_depth: z
@@ -317,7 +322,21 @@ server.tool(
         payload,
         DOCS_URLS.search,
       );
-      return text(formatSearchResults(data));
+
+      // Normalise images to { url, description? } for the widget
+      const images = (data.images ?? []).map((img) =>
+        typeof img === "string" ? { url: img } : img,
+      );
+
+      return widget({
+        props: {
+          query: params.query,
+          answer: data.answer,
+          results: data.results,
+          images,
+        },
+        output: text(formatSearchResults(data)),
+      });
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       return error(`Tavily search failed: ${msg}\nDocs: ${DOCS_URLS.search}`);
