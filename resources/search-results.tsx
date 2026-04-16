@@ -340,6 +340,8 @@ export default function SearchResults() {
           padding: 32,
           fontFamily: FONT,
           backgroundColor: c.bg,
+          maxHeight: 600,
+          overflowY: "auto" as const,
         }}
       >
         {/* Header */}
